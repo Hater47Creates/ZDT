@@ -1,0 +1,1940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>FEED THE RAGE — Retro Pixel Arcade</title>
+  <style>
+    :root {
+      --bg: #0d0b14;
+      --panel: #171324;
+      --border: #3a2e5c;
+      --accent: #ff3b5c;
+      --gold: #ffd447;
+      --good: #4ade80;
+      --text: #f3effa;
+      --muted: #9b8ec4;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at center, #1b162b 0%, var(--bg) 75%);
+      color: var(--text);
+      font-family: "Courier New", Courier, monospace;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    .app {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100dvh;
+      padding: 8px 12px;
+      gap: 8px;
+    }
+
+    .topbar {
+      width: 100%;
+      max-width: 960px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 6px 10px;
+      background: var(--panel);
+      border: 2px solid var(--border);
+      box-shadow: 0 4px 0 #07050c;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      font-size: clamp(12px, 2.2vw, 18px);
+      color: var(--gold);
+      text-shadow: 2px 2px 0 #000;
+      white-space: nowrap;
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      font-family: inherit;
+      font-weight: bold;
+      font-size: clamp(11px, 1.8vw, 13px);
+      padding: 6px 10px;
+      background: #272040;
+      color: var(--text);
+      border: 2px solid #56468a;
+      box-shadow: 0 3px 0 #09070f;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: transform 0.05s;
+    }
+
+    .btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 #09070f;
+    }
+
+    .btn.primary {
+      background: var(--accent);
+      border-color: #ff8aa0;
+      color: #fff;
+    }
+
+    .stage-wrap {
+      position: relative;
+      width: 100%;
+      max-width: 960px;
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .bezel {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      max-height: 100%;
+      aspect-ratio: 16 / 9;
+      max-width: calc((100dvh - 150px) * 16 / 9);
+      background: #08070d;
+      border: 4px solid #352b54;
+      box-shadow:
+        0 0 0 2px #130f20,
+        0 12px 30px rgba(0, 0, 0, 0.75);
+      overflow: hidden;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      image-rendering: -moz-crisp-edges;
+      image-rendering: -webkit-crisp-edges;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      touch-action: none;
+      cursor: crosshair;
+    }
+
+    .scanlines {
+      pointer-events: none;
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0) 0px,
+        rgba(0, 0, 0, 0) 2px,
+        rgba(0, 0, 0, 0.14) 3px,
+        rgba(0, 0, 0, 0.14) 4px
+      );
+    }
+
+    .controls-bar {
+      width: 100%;
+      max-width: 960px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .hold-pad {
+      flex: 1 1 240px;
+      padding: 10px 14px;
+      font-family: inherit;
+      font-weight: 900;
+      font-size: clamp(12px, 2.3vw, 15px);
+      letter-spacing: 1px;
+      color: #fff;
+      background: linear-gradient(180deg, #e03153 0%, #9e1935 100%);
+      border: 3px solid #ff7d97;
+      box-shadow: 0 4px 0 #470816;
+      text-transform: uppercase;
+      cursor: pointer;
+      touch-action: none;
+    }
+
+    .hold-pad.charging {
+      background: linear-gradient(180deg, #f59e0b 0%, #b45309 100%);
+      border-color: #fde68a;
+      transform: translateY(2px);
+      box-shadow: 0 2px 0 #470816;
+    }
+
+    .hint-text {
+      font-size: clamp(10px, 1.6vw, 12px);
+      color: var(--muted);
+      text-align: right;
+      flex: 1 1 220px;
+    }
+
+    /* Item Guide Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(6, 5, 12, 0.86);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 50;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal {
+      width: 100%;
+      max-width: 680px;
+      max-height: 88dvh;
+      overflow-y: auto;
+      background: var(--panel);
+      border: 3px solid var(--border);
+      padding: 16px;
+      box-shadow: 0 12px 40px #000;
+    }
+
+    .modal h2 {
+      margin: 0 0 10px;
+      color: var(--gold);
+      font-size: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .guide-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .guide-col {
+      background: #100d1a;
+      border: 2px solid #2e244a;
+      padding: 10px;
+    }
+
+    .guide-col h3 {
+      margin: 0 0 8px;
+      font-size: 14px;
+    }
+
+    .guide-col.bad h3 { color: #fbbf24; }
+    .guide-col.good h3 { color: var(--good); }
+
+    .guide-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      font-size: 12px;
+      line-height: 1.55;
+      color: #ddd6fe;
+    }
+
+    @media (max-width: 640px) {
+      .app { padding: 6px; gap: 6px; }
+      .hint-text { display: none; }
+      .bezel { max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="brand">👾 FEED THE RAGE</div>
+      <div class="top-actions">
+        <button id="guideBtn" class="btn">Item Guide</button>
+        <button id="muteBtn" class="btn">Sound: ON</button>
+        <button id="restartBtn" class="btn primary">New Game</button>
+      </div>
+    </div>
+
+    <div class="stage-wrap">
+      <div class="bezel">
+        <canvas id="gameCanvas" width="480" height="270"></canvas>
+        <div class="scanlines"></div>
+      </div>
+    </div>
+
+    <div class="controls-bar">
+      <button id="holdBtn" class="hold-pad">HOLD TO AIM • RELEASE TO THROW</button>
+      <div class="hint-text">
+        Desktop: Hold <b>SPACE</b> / <b>CLICK</b> on screen • Mobile: Touch &amp; Hold anywhere
+      </div>
+    </div>
+  </div>
+
+  <!-- Item Guide Modal -->
+  <div id="guideModal" class="modal-backdrop">
+    <div class="modal">
+      <h2>
+        <span>ARCADE FIELD GUIDE</span>
+        <button id="closeGuideBtn" class="btn">Close</button>
+      </h2>
+      <p style="font-size:12px;color:#c4b5fd;margin:0 0 8px;line-height:1.45;">
+        Hold to charge your arc &amp; release to throw! Feed him <b>BAD ITEMS</b> when his mouth is wide open.
+        If a <b>HEALTHY / DISTRACTING ITEM</b> is loaded, aim <b>short</b> into the floor or <b>high</b> over his head to discard it safely!
+        Watch out when he closes his mouth to <b>SNIFF</b> or <b>ROCHEL</b> — hitting a closed mouth or feeding him healthy stuff costs a Strike (5 Strikes = Game Over).
+      </p>
+      <div class="guide-grid">
+        <div class="guide-col bad">
+          <h3>✔ FEED HIM THESE (+SCORE)</h3>
+          <ul class="guide-list">
+            <li>• SER 300 Pill</li>
+            <li>• White Powder Baggy</li>
+            <li>• Lit Cigarette</li>
+            <li>• Bacardi 151 Bottle</li>
+            <li>• Dirty Bong (with buildup)</li>
+            <li>• Dirty Couch / Clutter</li>
+          </ul>
+        </div>
+        <div class="guide-col good">
+          <h3>✖ TOSS AWAY / AVOID (STRIKE!)</h3>
+          <ul class="guide-list">
+            <li>• Fresh Fruit Assortment (Apple, Banana, Grapes, Orange, Strawberry)</li>
+            <li>• PS5 Console</li>
+            <li>• Shiny Emmy Award</li>
+            <li>• Pixel-art YouTube Emblem</li>
+            <li>• Kid's Lego Toy</li>
+            <li>• Green / Ginger Tea</li>
+            <li>• Mineral Water Bottle</li>
+            <li>• Multivitamins / Omega-3</li>
+            <li>• Detox Smoothie</li>
+            <li>• Rolled-up Yoga Mat</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const CANVAS_W = 480;
+      const CANVAS_H = 270;
+      const STORAGE_KEY = "feed_the_rage_retro_highscore_v1";
+
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("2d");
+      ctx.imageSmoothingEnabled = false;
+
+      const holdBtn = document.getElementById("holdBtn");
+      const muteBtn = document.getElementById("muteBtn");
+      const restartBtn = document.getElementById("restartBtn");
+      const guideBtn = document.getElementById("guideBtn");
+      const guideModal = document.getElementById("guideModal");
+      const closeGuideBtn = document.getElementById("closeGuideBtn");
+
+      // ==========================================================
+      // RETRO WEB AUDIO SYNTHESIZER
+      // ==========================================================
+      class RetroAudio {
+        constructor() {
+          this.ctx = null;
+          this.muted = false;
+          this.noiseBuffer = null;
+        }
+
+        ensure() {
+          if (this.muted) return null;
+          if (!this.ctx) {
+            const AC = window.AudioContext || window.webkitAudioContext;
+            if (!AC) return null;
+            this.ctx = new AC();
+            const sr = this.ctx.sampleRate;
+            this.noiseBuffer = this.ctx.createBuffer(1, sr * 1.0, sr);
+            const data = this.noiseBuffer.getChannelData(0);
+            for (let i = 0; i < data.length; i++) {
+              data[i] = Math.random() * 2 - 1;
+            }
+          }
+          if (this.ctx.state === "suspended") {
+            this.ctx.resume().catch(() => {});
+          }
+          return this.ctx;
+        }
+
+        tone(type, freqStart, freqEnd, dur, vol = 0.14, delay = 0) {
+          const ac = this.ensure();
+          if (!ac) return;
+          const t = ac.currentTime + delay;
+          const osc = ac.createOscillator();
+          const gain = ac.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freqStart, t);
+          osc.frequency.exponentialRampToValueAtTime(Math.max(20, freqEnd), t + dur);
+          gain.gain.setValueAtTime(vol, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+          osc.connect(gain);
+          gain.connect(ac.destination);
+          osc.start(t);
+          osc.stop(t + dur + 0.01);
+        }
+
+        noise(filterFreqStart, filterFreqEnd, q, dur, vol = 0.16, filterType = "bandpass") {
+          const ac = this.ensure();
+          if (!ac || !this.noiseBuffer) return;
+          const t = ac.currentTime;
+          const src = ac.createBufferSource();
+          src.buffer = this.noiseBuffer;
+          const filter = ac.createBiquadFilter();
+          filter.type = filterType;
+          filter.Q.value = q;
+          filter.frequency.setValueAtTime(filterFreqStart, t);
+          filter.frequency.exponentialRampToValueAtTime(Math.max(40, filterFreqEnd), t + dur);
+          const gain = ac.createGain();
+          gain.gain.setValueAtTime(0.001, t);
+          gain.gain.linearRampToValueAtTime(vol, t + dur * 0.15);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+          src.connect(filter);
+          filter.connect(gain);
+          gain.connect(ac.destination);
+          src.start(t);
+          src.stop(t + dur + 0.02);
+        }
+
+        playChargeTick(charge) {
+          this.tone("square", 240 + charge * 420, 280 + charge * 440, 0.03, 0.035);
+        }
+
+        playThrow() {
+          this.tone("triangle", 220, 640, 0.11, 0.14);
+        }
+
+        playGulp() {
+          this.tone("square", 280, 560, 0.07, 0.12, 0);
+          this.tone("square", 520, 880, 0.09, 0.12, 0.07);
+          this.tone("square", 780, 1180, 0.11, 0.1, 0.14);
+        }
+
+        playDiscard() {
+          this.tone("triangle", 260, 120, 0.09, 0.09);
+        }
+
+        playSniff() {
+          // Sharp nasal pull-up sound (neus ophalen)
+          this.noise(800, 3200, 4.5, 0.24, 0.22, "bandpass");
+          this.tone("sawtooth", 140, 290, 0.18, 0.05);
+        }
+
+        playHack() {
+          // Loud guttural throat-clearing (rochelen)
+          this.noise(320, 950, 2.2, 0.34, 0.24, "bandpass");
+          this.tone("sawtooth", 95, 62, 0.32, 0.12);
+        }
+
+        playStrike() {
+          this.tone("sawtooth", 210, 80, 0.22, 0.18, 0);
+          this.tone("square", 155, 65, 0.28, 0.18, 0.14);
+        }
+
+        playChomp() {
+          this.tone("triangle", 460, 180, 0.08, 0.16, 0);
+          this.tone("triangle", 220, 480, 0.08, 0.14, 0.08);
+        }
+
+        playGameOver() {
+          const notes = [440, 415, 392, 349, 311, 261];
+          notes.forEach((n, idx) => {
+            this.tone("square", n, n * 0.96, 0.16, 0.14, idx * 0.15);
+          });
+        }
+      }
+
+      const audio = new RetroAudio();
+
+      // ==========================================================
+      // PIXEL ART BAKERY (OFFSCREEN CANVASES)
+      // ==========================================================
+      function bakePixels(rows, palette) {
+        const h = rows.length;
+        const w = rows[0].length;
+        const c = document.createElement("canvas");
+        c.width = w;
+        c.height = h;
+        const g = c.getContext("2d");
+        for (let y = 0; y < h; y++) {
+          const row = rows[y];
+          for (let x = 0; x < w; x++) {
+            const ch = row[x];
+            if (ch !== "." && palette[ch]) {
+              g.fillStyle = palette[ch];
+              g.fillRect(x, y, 1, 1);
+            }
+          }
+        }
+        return c;
+      }
+
+      // ----------------------------------------------------------
+      // ALL 16 ITEM SPRITES (16x16 ASCII PIXEL ART)
+      // ----------------------------------------------------------
+      const ITEM_DEFS = [
+        // === BAD ITEMS (KEEP HIM HAPPY / +SCORE) ===
+        {
+          id: "ser300",
+          name: "SER 300 PILL",
+          isBad: true,
+          sprite: bakePixels([
+            "................",
+            "......OOOO......",
+            "....OOBBBBOO....",
+            "...OBBWWWWBBO...",
+            "...OBWWRRWWBO...",
+            "..OBWWWRRWWWBO..",
+            "..OBBWWWWWWBBO..",
+            "..OCCCCCCCCCCO..",
+            "..OCWWWWWWWWCO..",
+            "..OCW33W0W0WCO..",
+            "..OCWWWWWWWWCO..",
+            "...OCGGGGGGCO...",
+            "...OCCWWWWCCO...",
+            "....OCCCCCCOO...",
+            "......OOOO......",
+            "................"
+          ], {
+            O: "#1a1426", B: "#38bdf8", W: "#f8fafc", R: "#ef4444",
+            C: "#e2e8f0", "3": "#1d4ed8", "0": "#1d4ed8", G: "#94a3b8"
+          })
+        },
+        {
+          id: "baggy",
+          name: "WHITE POWDER BAGGY",
+          isBad: true,
+          sprite: bakePixels([
+            "................",
+            "...OOOOOOOOOO...",
+            "..ORRRRRRRRRRO..",
+            "..OBBBBBBBBBBO..",
+            "..OBWWWWWWWWBO..",
+            "..OBWWLLWWWWBO..",
+            "..OBWWWWWWWWBO..",
+            "..OBWLLLLLWWBO..",
+            "..OBWWWWWWWWBO..",
+            "..OBWWWWWWWWBO..",
+            "..OBWWWWWWWWBO..",
+            "..OWWWWWWWWWWO..",
+            "..OWWWWWWWWWWO..",
+            "...OWWWWWWWWO...",
+            "....OOOOOOOO....",
+            "................"
+          ], {
+            O: "#1e293b", R: "#ef4444", B: "#93c5fd", W: "#ffffff", L: "#dbeafe"
+          })
+        },
+        {
+          id: "cigarette",
+          name: "LIT CIGARETTE",
+          isBad: true,
+          sprite: bakePixels([
+            "..SS............",
+            "...SS...........",
+            "..SS............",
+            "...OO...........",
+            "..ORFO..........",
+            "..OYYWO.........",
+            "...OWWWO........",
+            "....OWWWO.......",
+            ".....OWWWO......",
+            "......OWWWO.....",
+            ".......OWWWO....",
+            "........OTTTTO..",
+            ".........OTTTTO.",
+            "..........OTTO..",
+            "...........OO...",
+            "................"
+          ], {
+            O: "#1f1b24", S: "#9ca3af", R: "#ef4444", F: "#f97316",
+            Y: "#fde047", W: "#f8fafc", T: "#d97706"
+          })
+        },
+        {
+          id: "bacardi151",
+          name: "BACARDI 151",
+          isBad: true,
+          sprite: bakePixels([
+            "......OOOO......",
+            "......ORRO......",
+            "......ORRO......",
+            "......OGGO......",
+            "......OGGO......",
+            "....OOGGGGOO....",
+            "...OGGGGGGGGO...",
+            "...OGTTTTTTGO...",
+            "...OGTRRRRRTGO..",
+            "...OGT15111TGO..",
+            "...OGTTTTTTTGO..",
+            "...OGGGGGGGGGO..",
+            "...OGGLLLLGGGO..",
+            "...OGGGGGGGGGO..",
+            "....OOOOOOOOOO..",
+            "................"
+          ], {
+            O: "#14101c", R: "#dc2626", G: "#14532d", T: "#fde68a",
+            "1": "#111827", "5": "#111827", L: "#22c55e"
+          })
+        },
+        {
+          id: "bong",
+          name: "DIRTY BONG",
+          isBad: true,
+          sprite: bakePixels([
+            "......OOOO......",
+            ".....OBGGGO.....",
+            "......OBGO......",
+            "......OGBO......",
+            "......OGGO..OO..",
+            "......OBGO.OBBO.",
+            "......OGGGOOBO..",
+            ".....OGBBBBGO...",
+            "....OGBDDDDDGO..",
+            "...OGDDDDDDDGO..",
+            "...OGDDMMMDDGO..",
+            "...ODMMMMMMMDO..",
+            "...ODMMMMMMMDO..",
+            "....ODDDDDDDO...",
+            ".....OOOOOOO....",
+            "................"
+          ], {
+            O: "#181420", B: "#67e8f9", G: "#65a30d", D: "#78350f", M: "#451a03"
+          })
+        },
+        {
+          id: "couch",
+          name: "DIRTY COUCH",
+          isBad: true,
+          sprite: bakePixels([
+            "................",
+            "................",
+            "..OOOOOOOOOOOO..",
+            ".OBBBDDDDDDBBBO.",
+            ".OBBBBBBBBBBBBO.",
+            ".OBDMMBBBBMMBBO.",
+            "OOBBBBBBBBBBBBOO",
+            "OBBYYYYYYYYYYBBO",
+            "OBBYYDDBBYYDDBBO",
+            "OBBBBBBBBBBBBBBO",
+            "OBBDDDDDDDDDDBBO",
+            ".OOOOOOOOOOOOOO.",
+            "..OO........OO..",
+            "..OO........OO..",
+            "................",
+            "................"
+          ], {
+            O: "#18131d", B: "#78350f", D: "#451a03", M: "#84cc16", Y: "#a16207"
+          })
+        },
+
+        // === GOOD / HEALTHY / DISTRACTING ITEMS (TRIGGER STRIKES) ===
+        {
+          id: "fruit",
+          name: "FRESH FRUIT ASSORTMENT",
+          isBad: false,
+          sprite: bakePixels([
+            "......GGGG......",
+            "....OOGGGGOO....",
+            "...OYYRRRRROO...",
+            "..OYYYRRRRRROO..",
+            "..OYYOORROOOOPO.",
+            "..OYOOOROOOOOPP.",
+            "...OOORRRROOPPP.",
+            "..OORRRRRROOPPP.",
+            ".OORROOOOOOPPPP.",
+            ".OROOSSSSSOOO...",
+            "..OOSSSSSSSSO...",
+            "...OSSSSSSSSO...",
+            "....OOOOOOOO....",
+            "................",
+            "................",
+            "................"
+          ], {
+            O: "#1c1917", G: "#22c55e", Y: "#facc15", R: "#ef4444",
+            P: "#a855f7", S: "#f97316"
+          })
+        },
+        {
+          id: "ps5",
+          name: "PS5 CONSOLE",
+          isBad: false,
+          sprite: bakePixels([
+            "....OO....OO....",
+            "...OWWO..OWWO...",
+            "...OWWOBBOWWO...",
+            "...OWWOBBOWWO...",
+            "....OWOBBOWO....",
+            "....OWOBBOWO....",
+            "....OWOBBOWO....",
+            "....OWOBBOWO....",
+            "....OWOBBOWO....",
+            "....OWOBBOWO....",
+            "...OWWOBBOWWO...",
+            "...OWWOBBOWWO...",
+            "...OWWO..OWWO...",
+            "..OOWWOOOOOWWOO.",
+            "..OOOOOOOOOOOOO.",
+            "................"
+          ], {
+            O: "#111827", W: "#f8fafc", B: "#38bdf8"
+          })
+        },
+        {
+          id: "emmy",
+          name: "SHINY EMMY AWARD",
+          isBad: false,
+          sprite: bakePixels([
+            "..S...OOOO...S..",
+            ".....OYYYYO.....",
+            "....OYYYYYYO....",
+            ".....OYYYYO.....",
+            "..OO..OYYO..OO..",
+            ".OYYOOYYYYOOYYO.",
+            ".OYYYYYYYYYYYYO.",
+            "..OO..OYYO..OO..",
+            "......OYYO......",
+            ".....OYYYYO.....",
+            ".....OYYYYO.....",
+            "....OYYYYYYO....",
+            "...OOGGGGGGOO...",
+            "...OGGGGGGGGO...",
+            "...OOOOOOOOOO...",
+            "................"
+          ], {
+            O: "#291d06", Y: "#fde047", G: "#d97706", S: "#ffffff"
+          })
+        },
+        {
+          id: "youtube",
+          name: "YOUTUBE EMBLEM",
+          isBad: false,
+          sprite: bakePixels([
+            "................",
+            "................",
+            "..OOOOOOOOOOOO..",
+            ".ORRRRRRRRRRRRO.",
+            ".ORRRRRWRRRRRRO.",
+            ".ORRRRRWWRRRRRO.",
+            ".ORRRRRWWWRRRRO.",
+            ".ORRRRRWWWWRRRO.",
+            ".ORRRRRWWWRRRRO.",
+            ".ORRRRRWWRRRRRO.",
+            ".ORRRRRWRRRRRRO.",
+            ".ORRRRRRRRRRRRO.",
+            "..OOOOOOOOOOOO..",
+            "................",
+            "................",
+            "................"
+          ], {
+            O: "#1f1215", R: "#ef4444", W: "#ffffff"
+          })
+        },
+        {
+          id: "lego",
+          name: "KID'S LEGO TOY",
+          isBad: false,
+          sprite: bakePixels([
+            "................",
+            "...OOO....OOO...",
+            "..OYYYO..OYYYO..",
+            "..OYYYO..OYYYO..",
+            ".OOOOOOOOOOOOOO.",
+            ".ORRRRRRRRRRRRO.",
+            ".ORRRRRRRRRRRRO.",
+            ".ORRRRRRRRRRRRO.",
+            ".ORRRBBBBBBBRRO.",
+            ".ORRRBBBBBBBRRO.",
+            ".ORRRBBBBBBBRRO.",
+            ".ORRRRRRRRRRRRO.",
+            ".OOOOOOOOOOOOOO.",
+            "................",
+            "................",
+            "................"
+          ], {
+            O: "#18181b", Y: "#facc15", R: "#ef4444", B: "#3b82f6"
+          })
+        },
+        {
+          id: "tea",
+          name: "GREEN / GINGER TEA",
+          isBad: false,
+          sprite: bakePixels([
+            "....S.....S.....",
+            ".....S...S......",
+            "....S.....S.....",
+            "..OOOOOOOOOO....",
+            ".OWGGGGGGGGWO...",
+            ".OWGGGGGGGGWOO..",
+            ".OWWWWWWWWWWOWO.",
+            ".OWWWWWWRWWWOWO.",
+            ".OWWWWWWRWWOOWO.",
+            ".OWWWWWWWWWWOO..",
+            ".OWWWWWWWWWWO...",
+            "..OWWWWWWWWO....",
+            "...OOOOOOOO.....",
+            "................",
+            "................",
+            "................"
+          ], {
+            O: "#1e293b", W: "#f8fafc", G: "#4ade80", R: "#f59e0b", S: "#e2e8f0"
+          })
+        },
+        {
+          id: "water",
+          name: "MINERAL WATER",
+          isBad: false,
+          sprite: bakePixels([
+            "......OOOO......",
+            "......OBBO......",
+            "......OOOO......",
+            ".....OCCCCC.....",
+            "....OCBBBBCO....",
+            "....OCBBBBCO....",
+            "....OCWWWWCO....",
+            "....OCWBWWCO....",
+            "....OCWWWWCO....",
+            "....OCBBBBCO....",
+            "....OCBBBBCO....",
+            "....OCBBBBCO....",
+            "....OCBBBBCO....",
+            ".....OOOOOO.....",
+            "................",
+            "................"
+          ], {
+            O: "#0f172a", B: "#38bdf8", C: "#bae6fd", W: "#ffffff"
+          })
+        },
+        {
+          id: "vitamins",
+          name: "MULTIVITAMINS / OMEGA-3",
+          isBad: false,
+          sprite: bakePixels([
+            "................",
+            "....OOOOOOOO....",
+            "...OWWWWWWWWO...",
+            "...OWWWWWWWWO...",
+            "..OOGGGGGGGGOO..",
+            "..OGGGGGGGGGGO..",
+            "..OGGYYYYYYGGO..",
+            "..OGGYOOOOYGGO..",
+            "..OGGYYYYYYGGO..",
+            "..OGGGGGGGGGGO..",
+            "..OYYYY..PPPPO..",
+            "..OYYYY..PWWPO..",
+            "...OOOO...OOOO..",
+            "................",
+            "................",
+            "................"
+          ], {
+            O: "#1e1b24", W: "#f8fafc", G: "#16a34a", Y: "#facc15", P: "#ec4899"
+          })
+        },
+        {
+          id: "smoothie",
+          name: "DETOX SMOOTHIE",
+          isBad: false,
+          sprite: bakePixels([
+            "........OO......",
+            ".......OGGO.....",
+            "......OGGO......",
+            "....OOOOOOOO....",
+            "...OWWWWWWWWO...",
+            "...OOOOOOOOOO...",
+            "...OGGGGGGGGO...",
+            "...OGGLLLLGGO...",
+            "...OGGGGGGGGO...",
+            "....OGGGGGGO....",
+            "....OGGGGGGO....",
+            "....OGGGGGGO....",
+            ".....OGGGGO.....",
+            ".....OOOOOO.....",
+            "................",
+            "................"
+          ], {
+            O: "#142217", G: "#22c55e", L: "#bbf7d0", W: "#f8fafc"
+          })
+        },
+        {
+          id: "yoga",
+          name: "ROLLED-UP YOGA MAT",
+          isBad: false,
+          sprite: bakePixels([
+            "................",
+            "................",
+            "......OOOOOO....",
+            "....OOPPPPPPO...",
+            "...OPPPDDDDPPO..",
+            "..OPPPDDPPDDPPO.",
+            "..OPPPDPPPPDPPO.",
+            "..OPPPDDPPDDPPO.",
+            "..OOBBDDDDDDBPO.",
+            "..OOBBPPPPPPBPO.",
+            "...OBBPPPPPPPO..",
+            "....OOBBBBBPO...",
+            "......OOOOOO....",
+            "................",
+            "................",
+            "................"
+          ], {
+            O: "#1c1429", P: "#a855f7", D: "#581c87", B: "#18181b"
+          })
+        }
+      ];
+
+      // ----------------------------------------------------------
+      // PIXEL ART SIDE-PROFILE HEAD (44x44 GRID, FACING LEFT)
+      // ----------------------------------------------------------
+      function makeHeadSprite(state) {
+        const W = 44, H = 44;
+        const grid = Array.from({ length: H }, () => Array(W).fill("."));
+
+        const set = (x, y, ch) => {
+          if (x >= 0 && x < W && y >= 0 && y < H) grid[y][x] = ch;
+        };
+        const rect = (x, y, w, h, ch) => {
+          for (let j = y; j < y + h; j++) {
+            for (let i = x; i < x + w; i++) set(i, j, ch);
+          }
+        };
+
+        const isAngry = state === "angry";
+        const isClosed = state === "sniff" || state === "hack" || state === "pacClosed";
+        const isChew = state === "chew";
+
+        const pal = {
+          O: "#140f1c", // outline
+          H: "#231d2b", // hair dark
+          h: "#3b3248", // hair highlight
+          S: isAngry ? "#f07b6e" : "#e2a88d", // skin
+          s: isAngry ? "#c94b3e" : "#c48469", // skin shadow / stubble
+          E: "#ffffff", // eye white
+          P: "#111111", // pupil
+          M: "#2b0b12", // mouth cavity
+          T: "#f8fafc", // teeth
+          G: "#d95d75", // tongue
+          B: "#78350f", // brow/stubble
+          R: "#ef4444", // flush/angry
+          N: "#94a3b8"  // nostril/mucus accent
+        };
+
+        // Cranium & neck base
+        rect(14, 4, 22, 6, "H");
+        rect(11, 7, 27, 8, "H");
+        rect(28, 12, 11, 18, "H"); // back hair
+        rect(17, 5, 10, 2, "h");
+
+        // Forehead & face bulk
+        rect(10, 12, 22, 16, "S");
+        rect(9, 14, 4, 10, "S");
+        rect(26, 15, 11, 19, "S"); // cheek/ear/jaw side
+        rect(22, 34, 15, 9, "S"); // neck
+        rect(24, 38, 13, 5, "s"); // neck shadow
+
+        // Ear
+        rect(28, 19, 4, 7, "s");
+        rect(29, 20, 2, 5, "S");
+
+        // Prominent nose facing left
+        const noseYOffset = state === "sniff" ? -1 : 0;
+        rect(5, 20 + noseYOffset, 6, 4, "S");
+        rect(3, 21 + noseYOffset, 4, 3, "S");
+        rect(4, 24 + noseYOffset, 6, 2, "s");
+        set(5, 24 + noseYOffset, "O"); // flared nostril
+
+        // Eye & heavy under-eye bag
+        if (isChew) {
+          // Happy squint
+          rect(12, 17, 5, 1, "O");
+          rect(11, 16, 2, 1, "O");
+        } else {
+          rect(12, 16, 5, 3, "E");
+          rect(12, 17, 2, 2, "P");
+          rect(12, 19, 5, 1, "s"); // tired bag
+        }
+        // Eyebrow
+        if (isAngry) {
+          set(11, 13, "O"); set(12, 14, "O"); set(13, 14, "O"); set(14, 15, "O"); set(15, 15, "O");
+        } else {
+          rect(11, 14, 6, 1, "H");
+        }
+
+        // Mouth & Jaw Variations
+        if (state === "open" || state === "angry" || state === "pacOpen") {
+          // Upper lip
+          rect(6, 26, 10, 2, "S");
+          rect(6, 28, 9, 1, "s");
+          // Wide open mouth cavity facing left!
+          rect(6, 29, 17, 9, "M");
+          rect(5, 30, 3, 7, "M");
+          // Upper teeth
+          rect(7, 29, 5, 2, "T");
+          // Tongue
+          rect(10, 36, 9, 2, "G");
+          // Lower teeth & dropped jaw
+          rect(7, 37, 4, 1, "T");
+          rect(6, 38, 18, 4, "S");
+          rect(7, 40, 16, 2, "s"); // jaw stubble
+        } else if (state === "chew") {
+          rect(7, 26, 12, 12, "S");
+          rect(6, 31, 9, 1, "O");
+          rect(9, 34, 10, 4, "s");
+        } else if (state === "sniff") {
+          // Mouth clenched tight, nose wrinkled
+          rect(6, 26, 15, 11, "S");
+          rect(5, 30, 8, 1, "O"); // pursed mouth
+          rect(8, 33, 11, 4, "s");
+          set(6, 20, "s"); set(8, 19, "s"); // nose scrunch
+        } else if (state === "hack") {
+          // Throat/cheeks bulged out, mouth pursed
+          rect(6, 26, 16, 12, "S");
+          rect(14, 28, 7, 6, "R"); // strained puffed cheek
+          rect(5, 30, 9, 2, "O");
+          rect(20, 35, 6, 5, "R"); // strained throat
+        } else if (state === "pacClosed") {
+          rect(6, 26, 16, 12, "S");
+          rect(5, 31, 10, 1, "O");
+        }
+
+        // Clean outer dark pixel border around non-empty silhouette
+        const out = grid.map(r => r.slice());
+        for (let y = 0; y < H; y++) {
+          for (let x = 0; x < W; x++) {
+            if (grid[y][x] === ".") {
+              const adj =
+                (x > 0 && grid[y][x - 1] !== ".") ||
+                (x < W - 1 && grid[y][x + 1] !== ".") ||
+                (y > 0 && grid[y - 1][x] !== ".") ||
+                (y < H - 1 && grid[y + 1][x] !== ".");
+              if (adj) out[y][x] = "O";
+            }
+          }
+        }
+
+        return bakePixels(out.map(r => r.join("")), pal);
+      }
+
+      const HEAD_SPRITES = {
+        open: makeHeadSprite("open"),
+        sniff: makeHeadSprite("sniff"),
+        hack: makeHeadSprite("hack"),
+        chew: makeHeadSprite("chew"),
+        angry: makeHeadSprite("angry"),
+        pacOpen: makeHeadSprite("pacOpen"),
+        pacClosed: makeHeadSprite("pacClosed")
+      };
+
+      // Small running victim sprite for Pac-Man Game Over animation (12x16)
+      const RUNNER_FRAMES = [
+        bakePixels([
+          "....OOOO....",
+          "...OSSSSO...",
+          "...OSEESO...",
+          "....OSSO....",
+          "..OOBBBBOO..",
+          ".OOBBBBBBOO.",
+          ".OO.OBBO.OO.",
+          "....OBBO....",
+          "...OBBBBO...",
+          "...OB..BO...",
+          "..OO....OO..",
+          ".OO......OO."
+        ], { O: "#111", S: "#fcd34d", E: "#111", B: "#38bdf8" }),
+        bakePixels([
+          "....OOOO....",
+          "...OSSSSO...",
+          "...OSEESO...",
+          "....OSSO....",
+          "...OBBBBO...",
+          "..OOBBBBOO..",
+          "....OBBO....",
+          "...OBBBBO...",
+          "....OBBO....",
+          "...OO..OO...",
+          "...OO..OO...",
+          "............"
+        ], { O: "#111", S: "#fcd34d", E: "#111", B: "#38bdf8" })
+      ];
+
+      // ==========================================================
+      // GAME CONSTANTS & STATE
+      // ==========================================================
+      const RAGE_QUOTES = [
+        "your nothing",
+        "your fat",
+        "your ugly",
+        "take a minor to Nevada",
+        "it's not my fault",
+        "your dumb",
+        "I will take down your channel"
+      ];
+
+      const LAUNCH_X = 52;
+      const LAUNCH_Y = 212;
+      const LAUNCH_ANGLE = -40 * (Math.PI / 180);
+      const GRAVITY = 420;
+      const HEAD_SCALE = 2;
+      const HEAD_SIZE = 44 * HEAD_SCALE; // 88x88
+      const HEAD_X = 374;
+
+      function loadHighScore() {
+        try {
+          return parseInt(localStorage.getItem(STORAGE_KEY) || "0", 10) || 0;
+        } catch {
+          return 0;
+        }
+      }
+
+      function saveHighScore(val) {
+        try {
+          localStorage.setItem(STORAGE_KEY, String(val));
+        } catch {
+          // ignore storage restrictions
+        }
+      }
+
+      const state = {
+        mode: "START", // START, PLAYING, RAGE, GAMEOVER_ANIM, GAMEOVER
+        score: 0,
+        highScore: loadHighScore(),
+        isNewHigh: false,
+        strikes: 0,
+        maxStrikes: 5,
+        fedCount: 0,
+        streak: 0,
+        level: 1,
+
+        // Head movement & mouth actions
+        headY: 96,
+        headPhase: 0,
+        mouthState: "open", // open, sniff, hack, chew, angry
+        mouthTimer: 0,
+        nextActionCooldown: 3.2,
+        telegraphType: null, // null | 'sniff' | 'hack'
+        telegraphTimer: 0,
+
+        // Launcher & projectile
+        currentItem: null,
+        isCharging: false,
+        charge: 0,
+        chargeDir: 1,
+        chargeTickAccum: 0,
+        projectile: null, // { x, y, vx, vy, item, rot }
+        reloadTimer: 0,
+
+        // FX & quotes
+        particles: [],
+        floatingTexts: [],
+        shakeTime: 0,
+        rageTimer: 0,
+        activeQuote: "",
+        rageReason: "",
+
+        // Game Over Pac-Man sequence
+        goTimer: 0,
+        goPacX: 374,
+        goPacY: 130,
+        goRunnerX: 210,
+        goEaten: false
+      };
+
+      // ==========================================================
+      // HELPERS
+      // ==========================================================
+      function pickNextItem() {
+        // Weighted slightly ~58% bad items, ~42% good items so feeding stays lively
+        const badPool = ITEM_DEFS.filter(i => i.isBad);
+        const goodPool = ITEM_DEFS.filter(i => !i.isBad);
+        const useBad = Math.random() < 0.58;
+        const pool = useBad ? badPool : goodPool;
+        return pool[Math.floor(Math.random() * pool.length)];
+      }
+
+      function chargeToVelocity(c) {
+        // 0..0.24 => short floor toss (safe discard)
+        // 0.24..0.86 => sweeps across the full head vertical lane
+        // 0.86..1.00 => overthrow over head (safe discard)
+        if (c < 0.24) {
+          return 145 + (c / 0.24) * 165;
+        } else if (c <= 0.86) {
+          const t = (c - 0.24) / 0.62;
+          return 350 + t * 255;
+        } else {
+          const t = (c - 0.86) / 0.14;
+          return 605 + t * 95;
+        }
+      }
+
+      function spawnParticles(x, y, color, count = 10, speed = 80) {
+        for (let i = 0; i < count; i++) {
+          const a = Math.random() * Math.PI * 2;
+          const s = (0.3 + Math.random() * 0.7) * speed;
+          state.particles.push({
+            x, y,
+            vx: Math.cos(a) * s,
+            vy: Math.sin(a) * s - 25,
+            life: 0.35 + Math.random() * 0.35,
+            maxLife: 0.7,
+            color,
+            size: Math.random() < 0.5 ? 2 : 3
+          });
+        }
+      }
+
+      function addFloatingText(x, y, text, color = "#fff", dur = 1.0) {
+        state.floatingTexts.push({ x, y, text, color, life: dur, maxLife: dur });
+      }
+
+      function resetGame() {
+        state.mode = "PLAYING";
+        state.score = 0;
+        state.isNewHigh = false;
+        state.strikes = 0;
+        state.fedCount = 0;
+        state.streak = 0;
+        state.level = 1;
+        state.headY = 92;
+        state.headPhase = 0;
+        state.mouthState = "open";
+        state.mouthTimer = 0;
+        state.nextActionCooldown = 2.8;
+        state.telegraphType = null;
+        state.telegraphTimer = 0;
+        state.currentItem = pickNextItem();
+        state.isCharging = false;
+        state.charge = 0;
+        state.chargeDir = 1;
+        state.projectile = null;
+        state.reloadTimer = 0;
+        state.particles = [];
+        state.floatingTexts = [];
+        state.shakeTime = 0;
+        state.rageTimer = 0;
+        state.activeQuote = "";
+        state.rageReason = "";
+        holdBtn.classList.remove("charging");
+      }
+
+      function triggerStrike(reason) {
+        state.strikes++;
+        state.streak = 0;
+        state.shakeTime = 0.55;
+        state.activeQuote = RAGE_QUOTES[Math.floor(Math.random() * RAGE_QUOTES.length)];
+        state.rageReason = reason;
+        state.mouthState = "angry";
+        audio.playStrike();
+
+        if (state.strikes >= state.maxStrikes) {
+          // Trigger Pac-Man style Game Over animation
+          state.mode = "GAMEOVER_ANIM";
+          state.goTimer = 0;
+          state.goPacX = HEAD_X;
+          state.goPacY = 128;
+          state.goRunnerX = 225;
+          state.goEaten = false;
+          state.projectile = null;
+          state.isCharging = false;
+          holdBtn.classList.remove("charging");
+        } else {
+          state.mode = "RAGE";
+          state.rageTimer = 1.35;
+        }
+      }
+
+      // ==========================================================
+      // INPUT HANDLING (DESKTOP + MOBILE TOUCH UNIFIED)
+      // ==========================================================
+      function startCharge() {
+        audio.ensure();
+        if (guideModal.classList.contains("open")) return;
+        if (state.mode === "START" || state.mode === "GAMEOVER") {
+          resetGame();
+          return;
+        }
+        if (state.mode !== "PLAYING") return;
+        if (state.projectile || state.reloadTimer > 0 || !state.currentItem) return;
+        if (!state.isCharging) {
+          state.isCharging = true;
+          state.charge = 0.04;
+          state.chargeDir = 1;
+          state.chargeTickAccum = 0;
+          holdBtn.classList.add("charging");
+        }
+      }
+
+      function releaseCharge() {
+        if (!state.isCharging) return;
+        state.isCharging = false;
+        holdBtn.classList.remove("charging");
+        if (state.mode !== "PLAYING" || state.projectile || !state.currentItem) return;
+
+        const v = chargeToVelocity(state.charge);
+        state.projectile = {
+          x: LAUNCH_X,
+          y: LAUNCH_Y,
+          vx: Math.cos(LAUNCH_ANGLE) * v,
+          vy: Math.sin(LAUNCH_ANGLE) * v,
+          item: state.currentItem,
+          rot: 0
+        };
+        state.currentItem = null;
+        audio.playThrow();
+      }
+
+      // Keyboard
+      window.addEventListener("keydown", (e) => {
+        if (e.repeat) return;
+        if (e.code === "Space" || e.code === "Enter" || e.code === "ArrowUp" || e.code === "KeyW") {
+          e.preventDefault();
+          startCharge();
+        } else if (e.code === "KeyM") {
+          toggleMute();
+        }
+      });
+
+      window.addEventListener("keyup", (e) => {
+        if (e.code === "Space" || e.code === "Enter" || e.code === "ArrowUp" || e.code === "KeyW") {
+          e.preventDefault();
+          releaseCharge();
+        }
+      });
+
+      // Pointer events on Canvas & Hold Pad
+      const bindHoldElement = (el) => {
+        el.addEventListener("pointerdown", (e) => {
+          e.preventDefault();
+          try { el.setPointerCapture(e.pointerId); } catch {}
+          startCharge();
+        });
+        el.addEventListener("pointerup", (e) => {
+          e.preventDefault();
+          releaseCharge();
+        });
+        el.addEventListener("pointercancel", () => releaseCharge());
+      };
+
+      bindHoldElement(canvas);
+      bindHoldElement(holdBtn);
+      window.addEventListener("blur", () => releaseCharge());
+
+      function toggleMute() {
+        audio.muted = !audio.muted;
+        muteBtn.textContent = audio.muted ? "Sound: OFF" : "Sound: ON";
+      }
+
+      muteBtn.addEventListener("click", toggleMute);
+      restartBtn.addEventListener("click", () => {
+        audio.ensure();
+        resetGame();
+      });
+      guideBtn.addEventListener("click", () => guideModal.classList.add("open"));
+      closeGuideBtn.addEventListener("click", () => guideModal.classList.remove("open"));
+      guideModal.addEventListener("click", (e) => {
+        if (e.target === guideModal) guideModal.classList.remove("open");
+      });
+
+      // ==========================================================
+      // UPDATE LOOP
+      // ==========================================================
+      let lastTs = performance.now();
+
+      function update(dt) {
+        if (state.shakeTime > 0) state.shakeTime = Math.max(0, state.shakeTime - dt);
+
+        // Update particles
+        for (let i = state.particles.length - 1; i >= 0; i--) {
+          const p = state.particles[i];
+          p.x += p.vx * dt;
+          p.y += p.vy * dt;
+          p.vy += 220 * dt;
+          p.life -= dt;
+          if (p.life <= 0) state.particles.splice(i, 1);
+        }
+
+        // Update floating texts
+        for (let i = state.floatingTexts.length - 1; i >= 0; i--) {
+          const ft = state.floatingTexts[i];
+          ft.y -= 24 * dt;
+          ft.life -= dt;
+          if (ft.life <= 0) state.floatingTexts.splice(i, 1);
+        }
+
+        // GAME OVER PAC-MAN CHASE ANIMATION
+        if (state.mode === "GAMEOVER_ANIM") {
+          const prevT = state.goTimer;
+          state.goTimer += dt;
+          if (Math.floor(prevT * 6) !== Math.floor(state.goTimer * 6) && !state.goEaten) {
+            audio.playChomp();
+          }
+
+          if (!state.goEaten) {
+            state.goRunnerX -= 58 * dt; // little figure runs left
+            state.goPacX -= 118 * dt;   // giant head chases faster!
+            if (state.goPacX <= state.goRunnerX + 18) {
+              state.goEaten = true;
+              spawnParticles(state.goRunnerX + 8, state.goPacY + 42, "#ef4444", 22, 120);
+              spawnParticles(state.goRunnerX + 8, state.goPacY + 42, "#fde047", 14, 95);
+              state.shakeTime = 0.5;
+              audio.playGameOver();
+            }
+          } else if (state.goTimer > 3.2) {
+            state.mode = "GAMEOVER";
+          }
+          return;
+        }
+
+        if (state.mode === "RAGE") {
+          state.rageTimer -= dt;
+          if (state.rageTimer <= 0) {
+            state.mode = "PLAYING";
+            state.mouthState = "open";
+            state.currentItem = pickNextItem();
+            state.nextActionCooldown = Math.max(1.2, 2.4 - state.level * 0.12);
+          }
+          return;
+        }
+
+        if (state.mode !== "PLAYING") return;
+
+        // Difficulty scaling
+        state.level = 1 + Math.floor(state.fedCount / 3);
+        const speedMult = 1 + Math.min(2.2, (state.level - 1) * 0.18);
+
+        // Head vertical oscillation (moves continuously up and down on right side)
+        state.headPhase += dt * 1.45 * speedMult;
+        const minY = 30;
+        const maxY = 158;
+        const midY = (minY + maxY) * 0.5;
+        const ampY = (maxY - minY) * 0.5;
+        state.headY = midY + Math.sin(state.headPhase) * ampY;
+
+        // Mouth state machine (open -> telegraph -> sniff / hack -> open)
+        if (state.mouthState === "chew") {
+          state.mouthTimer -= dt;
+          if (state.mouthTimer <= 0) {
+            state.mouthState = "open";
+          }
+        } else if (state.mouthState === "sniff" || state.mouthState === "hack") {
+          state.mouthTimer -= dt;
+          if (state.mouthTimer <= 0) {
+            state.mouthState = "open";
+            const minCd = Math.max(0.75, 2.2 - state.level * 0.14);
+            const maxCd = Math.max(1.4, 3.6 - state.level * 0.18);
+            state.nextActionCooldown = minCd + Math.random() * (maxCd - minCd);
+          }
+        } else if (state.telegraphType) {
+          state.telegraphTimer -= dt;
+          if (state.telegraphTimer <= 0) {
+            state.mouthState = state.telegraphType;
+            state.telegraphType = null;
+            state.mouthTimer = 0.72 + Math.random() * 0.55;
+            if (state.mouthState === "sniff") {
+              audio.playSniff();
+              addFloatingText(HEAD_X - 8, state.headY + 26, "*SNIFFFF!*", "#93c5fd", 0.9);
+            } else {
+              audio.playHack();
+              addFloatingText(HEAD_X - 10, state.headY + 26, "*ROCHEL!*", "#bef264", 0.9);
+            }
+          }
+        } else {
+          state.nextActionCooldown -= dt;
+          if (state.nextActionCooldown <= 0) {
+            state.telegraphType = Math.random() < 0.5 ? "sniff" : "hack";
+            state.telegraphTimer = Math.max(0.26, 0.44 - state.level * 0.015);
+          }
+        }
+
+        // Reload timer
+        if (state.reloadTimer > 0) {
+          state.reloadTimer -= dt;
+          if (state.reloadTimer <= 0 && !state.projectile && !state.currentItem) {
+            state.currentItem = pickNextItem();
+          }
+        }
+
+        // Charging aim
+        if (state.isCharging) {
+          const chargeSpeed = 1.05;
+          state.charge += state.chargeDir * chargeSpeed * dt;
+          if (state.charge >= 1) {
+            state.charge = 1;
+            state.chargeDir = -1;
+          } else if (state.charge <= 0.04) {
+            state.charge = 0.04;
+            state.chargeDir = 1;
+          }
+          state.chargeTickAccum += dt;
+          if (state.chargeTickAccum >= 0.085) {
+            state.chargeTickAccum = 0;
+            audio.playChargeTick(state.charge);
+          }
+        }
+
+        // Projectile flight & collisions
+        if (state.projectile) {
+          const pr = state.projectile;
+          pr.x += pr.vx * dt;
+          pr.y += pr.vy * dt;
+          pr.vy += GRAVITY * dt;
+          pr.rot += dt * 7;
+
+          // Floor discard
+          if (pr.y >= 246) {
+            if (!pr.item.isBad) {
+              // Safely tossed away a healthy/distracting item!
+              state.score += 15;
+              if (state.score > state.highScore) {
+                state.highScore = state.score;
+                state.isNewHigh = true;
+                saveHighScore(state.highScore);
+              }
+              addFloatingText(pr.x, 224, "TRASHED! +15", "#4ade80", 0.75);
+              spawnParticles(pr.x, 246, "#4ade80", 7, 55);
+              audio.playDiscard();
+            } else {
+              // Missed with a bad item — reset streak gently, no strike
+              state.streak = 0;
+              addFloatingText(pr.x, 224, "MISSED!", "#9ca3af", 0.75);
+              spawnParticles(pr.x, 246, "#94a3b8", 6, 45);
+              audio.playDiscard();
+            }
+            state.projectile = null;
+            state.reloadTimer = 0.18;
+            return;
+          }
+
+          // Off-screen right or high over his head
+          if (pr.x > CANVAS_W + 20) {
+            if (!pr.item.isBad) {
+              state.score += 15;
+              if (state.score > state.highScore) {
+                state.highScore = state.score;
+                state.isNewHigh = true;
+                saveHighScore(state.highScore);
+              }
+              addFloatingText(CANVAS_W - 64, Math.max(40, pr.y), "DODGED! +15", "#4ade80", 0.8);
+              audio.playDiscard();
+            } else {
+              state.streak = 0;
+              addFloatingText(CANVAS_W - 56, Math.max(40, pr.y), "OVERTHROW!", "#9ca3af", 0.8);
+            }
+            state.projectile = null;
+            state.reloadTimer = 0.18;
+            return;
+          }
+
+          // Head collision check
+          const px = pr.x;
+          const py = pr.y;
+          const hx = HEAD_X;
+          const hy = state.headY;
+
+          // Closed mouth (sniff or hack) hitbox across face
+          if (state.mouthState === "sniff" || state.mouthState === "hack") {
+            if (px > hx + 4 && px < hx + 68 && py > hy + 18 && py < hy + 80) {
+              spawnParticles(px, py, "#ef4444", 16, 100);
+              state.projectile = null;
+              const reason = state.mouthState === "sniff"
+                ? "HE WAS SNIFFING! MOUTH CLOSED!"
+                : "HE WAS ROCHELING! MOUTH CLOSED!";
+              triggerStrike(reason);
+              return;
+            }
+          } else {
+            // Open mouth cavity hitbox (left-lower-front of head)
+            if (px > hx - 2 && px < hx + 46 && py > hy + 46 && py < hy + 82) {
+              state.projectile = null;
+              if (pr.item.isBad) {
+                // Successful feed!
+                state.fedCount++;
+                state.streak++;
+                const bonus = Math.min(5, state.streak) * 20;
+                const pts = 100 + bonus;
+                state.score += pts;
+                if (state.score > state.highScore) {
+                  state.highScore = state.score;
+                  state.isNewHigh = true;
+                  saveHighScore(state.highScore);
+                }
+                state.mouthState = "chew";
+                state.mouthTimer = 0.34;
+                audio.playGulp();
+                spawnParticles(hx + 18, hy + 62, "#fde047", 12, 85);
+                addFloatingText(hx + 10, hy + 26, `+${pts}`, "#fde047", 0.85);
+                state.reloadTimer = 0.16;
+              } else {
+                // Fed him a healthy/distracting item -> STRIKE!
+                spawnParticles(hx + 18, hy + 62, "#ef4444", 18, 110);
+                triggerStrike(`GROSS! NO ${pr.item.name}!`);
+              }
+              return;
+            }
+          }
+        }
+      }
+
+      // ==========================================================
+      // RENDER LOOP
+      // ==========================================================
+      function drawPixelText(text, x, y, color = "#fff", size = 10, align = "left", shadow = true) {
+        ctx.font = `bold ${size}px "Courier New", Courier, monospace`;
+        ctx.textAlign = align;
+        ctx.textBaseline = "top";
+        if (shadow) {
+          ctx.fillStyle = "#09070f";
+          ctx.fillText(text, Math.round(x) + 1, Math.round(y) + 1);
+        }
+        ctx.fillStyle = color;
+        ctx.fillText(text, Math.round(x), Math.round(y));
+      }
+
+      function drawBackground() {
+        // Retro room wall
+        ctx.fillStyle = "#161224";
+        ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+
+        // Subtle pixel brick/panel grid
+        ctx.fillStyle = "#1d1730";
+        for (let y = 26; y < 246; y += 22) {
+          ctx.fillRect(0, y, CANVAS_W, 1);
+        }
+        for (let x = 0; x < CANVAS_W; x += 48) {
+          ctx.fillRect(x, 26, 1, 220);
+        }
+
+        // Extremely subtle, barely-visible background quote as requested
+        ctx.save();
+        ctx.font = 'bold 14px "Courier New", Courier, monospace';
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillStyle = "rgba(255, 255, 255, 0.035)";
+        ctx.fillText("I have done nothing to them", CANVAS_W * 0.48, CANVAS_H * 0.52);
+        ctx.restore();
+
+        // Retro floor
+        ctx.fillStyle = "#261f3d";
+        ctx.fillRect(0, 246, CANVAS_W, 24);
+        ctx.fillStyle = "#3a2e5c";
+        ctx.fillRect(0, 246, CANVAS_W, 2);
+      }
+
+      function drawHUD() {
+        ctx.fillStyle = "#0b0914";
+        ctx.fillRect(0, 0, CANVAS_W, 26);
+        ctx.fillStyle = "#3a2e5c";
+        ctx.fillRect(0, 25, CANVAS_W, 2);
+
+        drawPixelText(`SCORE:${state.score}`, 8, 7, "#fde047", 11, "left");
+        drawPixelText(`BEST:${state.highScore}`, 124, 7, "#93c5fd", 11, "left");
+        drawPixelText(`LVL:${state.level}`, 232, 7, "#c4b5fd", 11, "left");
+
+        // Strikes indicator (5 slots)
+        drawPixelText("STRIKES:", 312, 7, "#fca5a5", 10, "right");
+        for (let i = 0; i < state.maxStrikes; i++) {
+          const sx = 320 + i * 16;
+          const sy = 6;
+          const active = i < state.strikes;
+          ctx.fillStyle = active ? "#ef4444" : "#251e3b";
+          ctx.fillRect(sx, sy, 12, 13);
+          ctx.strokeStyle = active ? "#fecaca" : "#4b3d75";
+          ctx.lineWidth = 1;
+          ctx.strokeRect(sx + 0.5, sy + 0.5, 11, 12);
+          if (active) {
+            drawPixelText("X", sx + 6, sy + 2, "#fff", 10, "center", false);
+          }
+        }
+
+        // Streak badge
+        if (state.streak >= 2) {
+          drawPixelText(`x${Math.min(5, state.streak)} STREAK!`, 472, 7, "#4ade80", 10, "right");
+        }
+      }
+
+      function drawHead() {
+        let sprite = HEAD_SPRITES.open;
+        let offsetX = 0;
+        let offsetY = 0;
+
+        if (state.mouthState === "sniff") {
+          sprite = HEAD_SPRITES.sniff;
+          offsetY = Math.sin(performance.now() * 0.08) * 1.5;
+        } else if (state.mouthState === "hack") {
+          sprite = HEAD_SPRITES.hack;
+          offsetX = Math.sin(performance.now() * 0.11) * 2.5;
+        } else if (state.mouthState === "chew") {
+          sprite = HEAD_SPRITES.chew;
+        } else if (state.mouthState === "angry") {
+          sprite = HEAD_SPRITES.angry;
+          offsetX = (Math.random() - 0.5) * 4;
+          offsetY = (Math.random() - 0.5) * 4;
+        }
+
+        const dx = Math.round(HEAD_X + offsetX);
+        const dy = Math.round(state.headY + offsetY);
+        ctx.drawImage(sprite, dx, dy, HEAD_SIZE, HEAD_SIZE);
+
+        // Sniff suction lines (neus ophalen)
+        if (state.mouthState === "sniff") {
+          const pulse = (performance.now() * 0.02) % 10;
+          ctx.fillStyle = "#7dd3fc";
+          for (let i = 0; i < 3; i++) {
+            ctx.fillRect(dx - 10 + pulse + i * 3, dy + 42 + i * 3, 5, 2);
+          }
+          drawPixelText("CLOSED!", dx + 44, dy - 12, "#60a5fa", 9, "center");
+        }
+
+        // Hack / Rochelen warning sparks
+        if (state.mouthState === "hack") {
+          ctx.fillStyle = "#bef264";
+          const t = performance.now() * 0.03;
+          ctx.fillRect(dx - 8 + Math.cos(t) * 3, dy + 54, 4, 4);
+          ctx.fillRect(dx - 14, dy + 62 + Math.sin(t) * 3, 3, 3);
+          drawPixelText("CLOSED!", dx + 44, dy - 12, "#a3e635", 9, "center");
+        }
+
+        // Telegraph warning before closing mouth
+        if (state.telegraphType && state.mouthState === "open") {
+          ctx.fillStyle = "#facc15";
+          ctx.fillRect(dx + 8, dy - 14, 12, 12);
+          drawPixelText("!", dx + 14, dy - 13, "#000", 10, "center", false);
+        }
+      }
+
+      function drawLauncherAndPreview() {
+        // Pixel slingshot / hand pedestal
+        ctx.fillStyle = "#5b3a29";
+        ctx.fillRect(LAUNCH_X - 6, LAUNCH_Y + 14, 12, 20);
+        ctx.fillStyle = "#7c523b";
+        ctx.fillRect(LAUNCH_X - 8, LAUNCH_Y + 10, 16, 6);
+
+        // Loaded item
+        if (state.currentItem) {
+          const bob = state.isCharging ? 0 : Math.sin(performance.now() * 0.006) * 2;
+          ctx.drawImage(state.currentItem.sprite, LAUNCH_X - 16, LAUNCH_Y - 16 + bob, 32, 32);
+
+          // Clear item tag at bottom-left
+          const isBad = state.currentItem.isBad;
+          const badgeColor = isBad ? "#fbbf24" : "#4ade80";
+          const tag = isBad ? "FEED HIM:" : "AVOID / TOSS:";
+          drawPixelText(tag, 10, 250, badgeColor, 9, "left");
+          drawPixelText(state.currentItem.name, 88, 250, "#ffffff", 9, "left");
+        }
+
+        // Dotted trajectory arc & charge bar while holding
+        if (state.isCharging) {
+          const v = chargeToVelocity(state.charge);
+          const vx = Math.cos(LAUNCH_ANGLE) * v;
+          const vy = Math.sin(LAUNCH_ANGLE) * v;
+
+          for (let i = 1; i <= 14; i++) {
+            const t = i * 0.065;
+            const px = LAUNCH_X + vx * t;
+            const py = LAUNCH_Y + vy * t + 0.5 * GRAVITY * t * t;
+            if (py > 245 || px > HEAD_X + 20) break;
+            ctx.fillStyle = i % 2 === 0 ? "#fde047" : "#ffffff";
+            ctx.globalAlpha = Math.max(0.2, 1 - i * 0.055);
+            ctx.fillRect(Math.round(px) - 1, Math.round(py) - 1, 3, 3);
+          }
+          ctx.globalAlpha = 1;
+
+          // Power bar above launcher
+          const bx = 14, by = 166, bw = 76, bh = 8;
+          ctx.fillStyle = "#09070f";
+          ctx.fillRect(bx, by, bw, bh);
+          ctx.fillStyle = state.charge < 0.24 ? "#60a5fa" : state.charge > 0.86 ? "#c084fc" : "#facc15";
+          ctx.fillRect(bx + 1, by + 1, Math.round((bw - 2) * state.charge), bh - 2);
+          ctx.strokeStyle = "#fff";
+          ctx.strokeRect(bx + 0.5, by + 0.5, bw - 1, bh - 1);
+        }
+      }
+
+      function drawProjectile() {
+        if (!state.projectile) return;
+        const pr = state.projectile;
+        ctx.save();
+        ctx.translate(Math.round(pr.x), Math.round(pr.y));
+        ctx.rotate(pr.rot);
+        ctx.drawImage(pr.item.sprite, -16, -16, 32, 32);
+        ctx.restore();
+      }
+
+      function drawParticlesAndText() {
+        for (const p of state.particles) {
+          ctx.fillStyle = p.color;
+          ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
+          ctx.fillRect(Math.round(p.x), Math.round(p.y), p.size, p.size);
+        }
+        ctx.globalAlpha = 1;
+
+        for (const ft of state.floatingTexts) {
+          ctx.globalAlpha = Math.min(1, ft.life / (ft.maxLife * 0.5));
+          drawPixelText(ft.text, ft.x, ft.y, ft.color, 10, "center");
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      function drawRageOverlay() {
+        if (state.mode !== "RAGE") return;
+        // Dramatic red flash + iconic rage quote
+        const flash = Math.floor(performance.now() / 80) % 2 === 0;
+        ctx.fillStyle = flash ? "rgba(220, 38, 38, 0.24)" : "rgba(0, 0, 0, 0.4)";
+        ctx.fillRect(0, 26, CANVAS_W, 220);
+
+        // Quote banner
+        ctx.fillStyle = "#0b0914";
+        ctx.fillRect(28, 78, 336, 78);
+        ctx.strokeStyle = "#ef4444";
+        ctx.lineWidth = 3;
+        ctx.strokeRect(28.5, 78.5, 335, 77);
+
+        drawPixelText(`STRIKE ${state.strikes} / ${state.maxStrikes}`, 196, 86, "#fca5a5", 10, "center");
+        drawPixelText(state.rageReason, 196, 101, "#fde047", 9, "center");
+        drawPixelText(`"${state.activeQuote.toUpperCase()}"`, 196, 122, "#ffffff", 13, "center");
+      }
+
+      function drawGameOverPacManAnim() {
+        ctx.fillStyle = "#07060d";
+        ctx.fillRect(0, 26, CANVAS_W, 220);
+
+        // Classic Pac-Man maze corridor lines
+        ctx.fillStyle = "#2563eb";
+        ctx.fillRect(0, 96, CANVAS_W, 4);
+        ctx.fillRect(0, 224, CANVAS_W, 4);
+
+        // Pellet dots along the floor
+        ctx.fillStyle = "#fde68a";
+        for (let px = 20; px < state.goPacX; px += 22) {
+          if (!state.goEaten && px > state.goRunnerX + 8) {
+            ctx.fillRect(px, 174, 4, 4);
+          } else if (px < state.goPacX - 10 && state.goEaten) {
+            ctx.fillRect(px, 174, 4, 4);
+          }
+        }
+
+        // Running victim figure
+        if (!state.goEaten) {
+          const rf = RUNNER_FRAMES[Math.floor(state.goTimer * 10) % 2];
+          ctx.drawImage(rf, Math.round(state.goRunnerX), 156, 24, 24);
+        }
+
+        // Giant Pac-Man style chomping head!
+        const chompOpen = Math.floor(state.goTimer * 10) % 2 === 0;
+        const pacSprite = chompOpen ? HEAD_SPRITES.pacOpen : HEAD_SPRITES.pacClosed;
+        ctx.drawImage(pacSprite, Math.round(state.goPacX), state.goPacY, HEAD_SIZE, HEAD_SIZE);
+
+        drawPixelText(`"${state.activeQuote.toUpperCase()}"`, CANVAS_W / 2, 52, "#ef4444", 14, "center");
+        if (state.goEaten) {
+          drawPixelText("*CHOMP!*", CANVAS_W / 2, 200, "#fde047", 14, "center");
+        }
+      }
+
+      function drawOverlayPanels() {
+        if (state.mode === "START") {
+          ctx.fillStyle = "rgba(8, 7, 15, 0.84)";
+          ctx.fillRect(0, 26, CANVAS_W, 220);
+
+          drawPixelText("FEED THE RAGE", CANVAS_W / 2, 44, "#fde047", 20, "center");
+          drawPixelText("RETRO PIXEL EDITION", CANVAS_W / 2, 68, "#ff5c7a", 10, "center");
+
+          ctx.fillStyle = "#171324";
+          ctx.fillRect(48, 88, 384, 96);
+          ctx.strokeStyle = "#4c3b7a";
+          ctx.lineWidth = 2;
+          ctx.strokeRect(48.5, 88.5, 383, 95);
+
+          drawPixelText("HOLD to aim your arc, RELEASE to throw!", CANVAS_W / 2, 98, "#ffffff", 10, "center");
+          drawPixelText("FEED HIM: Pills, Baggy, Cigs, Bacardi 151, Bong, Couch", CANVAS_W / 2, 118, "#fbbf24", 9, "center");
+          drawPixelText("TOSS AWAY: Fruit, PS5, Emmy, YouTube, Lego, Tea, Water, Yoga", CANVAS_W / 2, 136, "#4ade80", 9, "center");
+          drawPixelText("DANGER: Don't hit him while he SNIFFS or ROCHELS!", CANVAS_W / 2, 154, "#fca5a5", 9, "center");
+
+          const blink = Math.floor(performance.now() / 420) % 2 === 0;
+          if (blink) {
+            drawPixelText("PRESS SPACE OR TAP ANYWHERE TO START", CANVAS_W / 2, 202, "#fde047", 11, "center");
+          }
+        } else if (state.mode === "GAMEOVER") {
+          ctx.fillStyle = "rgba(8, 7, 15, 0.9)";
+          ctx.fillRect(0, 26, CANVAS_W, 220);
+
+          drawPixelText("GAME OVER", CANVAS_W / 2, 48, "#ef4444", 24, "center");
+          if (state.isNewHigh) {
+            drawPixelText("★ NEW HIGH SCORE! ★", CANVAS_W / 2, 80, "#4ade80", 12, "center");
+          }
+          drawPixelText(`FINAL SCORE: ${state.score}`, CANVAS_W / 2, 106, "#fde047", 14, "center");
+          drawPixelText(`BEST SCORE: ${state.highScore}`, CANVAS_W / 2, 128, "#93c5fd", 12, "center");
+          drawPixelText(`ITEMS FED: ${state.fedCount}   (LEVEL ${state.level})`, CANVAS_W / 2, 150, "#c4b5fd", 10, "center");
+
+          const blink = Math.floor(performance.now() / 420) % 2 === 0;
+          if (blink) {
+            drawPixelText("PRESS SPACE OR TAP TO PLAY AGAIN", CANVAS_W / 2, 194, "#ffffff", 11, "center");
+          }
+        }
+      }
+
+      function render() {
+        ctx.save();
+        if (state.shakeTime > 0) {
+          const sx = (Math.random() - 0.5) * 8;
+          const sy = (Math.random() - 0.5) * 8;
+          ctx.translate(sx, sy);
+        }
+
+        drawBackground();
+
+        if (state.mode === "GAMEOVER_ANIM") {
+          drawGameOverPacManAnim();
+          drawParticlesAndText();
+        } else {
+          drawHead();
+          drawLauncherAndPreview();
+          drawProjectile();
+          drawParticlesAndText();
+          drawRageOverlay();
+          drawOverlayPanels();
+        }
+
+        drawHUD();
+        ctx.restore();
+      }
+
+      function loop(ts) {
+        const dt = Math.min(0.05, (ts - lastTs) / 1000);
+        lastTs = ts;
+        update(dt);
+        render();
+        requestAnimationFrame(loop);
+      }
+
+      // Initialize
+      state.currentItem = pickNextItem();
+      requestAnimationFrame(loop);
+    })();
+  </script>
+</body>
+</html>
